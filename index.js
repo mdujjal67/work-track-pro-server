@@ -26,6 +26,15 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+
+    const servicesCollection = client.db('WorkTrackPro').collection('services');
+
+    // read services
+    app.get('/services', async(req, res) => {
+        const result = await servicesCollection.find().toArray();
+        res.send(result);
+    });
+
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     // Send a ping to confirm a successful connection
