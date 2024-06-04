@@ -28,6 +28,28 @@ async function run() {
   try {
 
     const servicesCollection = client.db('WorkTrackPro').collection('services');
+    const contactedCollection = client.db('WorkTrackPro').collection('contactedUser');
+    const testimonialsCollection = client.db('WorkTrackPro').collection('testimonials');
+
+
+
+
+
+    // contact data receive from client side visitor
+    app.post('/contactedUser', async(req, res) => {
+        const contactedUser = req.body
+        console.log(contactedUser)
+        const result = await contactedCollection.insertOne(contactedUser)
+        res.send(result)
+      });
+
+
+      // read services
+    app.get('/testimonials', async(req, res) => {
+        const result = await testimonialsCollection.find().toArray();
+        res.send(result);
+    });
+
 
     // read services
     app.get('/services', async(req, res) => {
