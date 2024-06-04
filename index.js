@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 require('dotenv').config();
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const port = process.env.PORT || 9000;
 
@@ -30,10 +31,37 @@ async function run() {
     const servicesCollection = client.db('WorkTrackPro').collection('services');
     const contactedCollection = client.db('WorkTrackPro').collection('contactedUser');
     const testimonialsCollection = client.db('WorkTrackPro').collection('testimonials');
+    const usersCollection = client.db('WorkTrackPro').collection('users');
 
 
 
+    // -------------jwt related api--------------
+    app.post('/jwt', async (req, res) => {
+        const user = req.body;
+        console.log(user);
+        const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' }); //token generate
+  
+        // the commented code would work only localhost but bellow codes would work with production and localhost also.
+        res.send({ token })
+      });
 
+
+
+    
+    //------------------- service related api ----------------
+
+    app.post('/users', async(req, res) => {
+        const user = req.body;
+        // insert email if user doesn't exists
+        // It can be done many ways(1. email unique, 2. upsert, 3. simple checking)
+        const query = {email: user.email};
+        const existingUser = await usersCollection.findOne(query);
+        if(existingUser){
+          return res.send({message: "user already exists."})
+        }
+        const result = await usersCollection.insertOne(user);
+        res.send(result);
+      })
 
     // contact data receive from client side visitor
     app.post('/contactedUser', async(req, res) => {
