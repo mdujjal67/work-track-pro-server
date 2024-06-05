@@ -67,15 +67,27 @@ async function run() {
             });
         };
 
-        const verifyAdmin = async (req, res, next) => {
-            const email = req.decoded.email;
-            const query = { email };
-            const user = await usersCollection.findOne(query);
-            if (!user || user.role !== 'Admin') {
-                return res.status(403).send({ message: 'Forbidden access' });
-            }
-            next();
-        };
+    const verifyAdmin = async (req, res, next) => {
+        const email = req.decoded.email;
+        const query = { email };
+        const user = await usersCollection.findOne(query);
+        if (!user || user.role !== 'Admin') {
+            return res.status(403).send({ message: 'Forbidden access' });
+        }
+        next();
+    };
+
+    // const verifyHR = async (req, res, next) => {
+    //     const email = req.decoded.email;
+    //     const query = { email };
+    //     const user = await usersCollection.findOne(query);
+    //     if (!user || user.role !== 'HR') {
+    //         return res.status(403).send({ message: 'Forbidden access' });
+    //     }
+    //     next();
+    // };
+
+
 
         app.get('/users/admin/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
@@ -89,6 +101,18 @@ async function run() {
         });
 
 
+        // app.get('/users/hr/:email', verifyToken, async (req, res) => {
+        //     const email = req.params.email;
+        //     if (email !== req.decoded.email) {
+        //         return res.status(403).send({ message: 'Forbidden access' });
+        //     }
+
+        //     const query = { email };
+        //     const user = await usersCollection.findOne(query);
+        //     res.send({ hr: user?.role === 'HR' });
+        // });
+
+
     app.post('/users', async(req, res) => {
         const user = req.body;
         // insert email if user doesn't exists
@@ -100,7 +124,37 @@ async function run() {
         }
         const result = await usersCollection.insertOne(user);
         res.send(result);
+      });
+
+
+      // update a user as a HR
+    app.patch('/users/admin/:id',verifyToken, verifyAdmin, async(req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id)};
+        const updatedDoc = {
+          $set: {
+            role: 'HR',
+            isVerified: 'Verified'
+          }
+        }
+        const result = await usersCollection.updateOne(filter, updatedDoc);
+        res.send(result);
       })
+
+
+    //   api to show users on the UI
+    app.get('/users', async(req, res) => {
+        const result = await usersCollection.find().toArray();
+        res.send(result)
+    })
+
+
+    //   contact data show to admin of visitors
+    app.get('/messages', async(req, res) => {
+        const result = await contactedCollection.find().toArray();
+        res.send(result);
+    })
+
 
     // contact data receive from client side visitor
     app.post('/contactedUser', async(req, res) => {
