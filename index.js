@@ -50,6 +50,45 @@ async function run() {
     
     //------------------- service related api ----------------
 
+
+    // middlewares
+    const verifyToken = (req, res, next) => {
+        console.log("token" ,req?.headers?.authorization)
+            if (!req.headers.authorization) {
+                return res.status(401).send({ message: 'Unauthorized access' });
+            }
+            const token = req.headers.authorization.split(' ')[1];
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+                if (err) {
+                    return res.status(401).send({ message: 'Unauthorized access' });
+                }
+                req.decoded = decoded;
+                next();
+            });
+        };
+
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email };
+            const user = await usersCollection.findOne(query);
+            if (!user || user.role !== 'Admin') {
+                return res.status(403).send({ message: 'Forbidden access' });
+            }
+            next();
+        };
+
+        app.get('/users/admin/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            if (email !== req.decoded.email) {
+                return res.status(403).send({ message: 'Forbidden access' });
+            }
+
+            const query = { email };
+            const user = await usersCollection.findOne(query);
+            res.send({ admin: user?.role === 'Admin' });
+        });
+
+
     app.post('/users', async(req, res) => {
         const user = req.body;
         // insert email if user doesn't exists
