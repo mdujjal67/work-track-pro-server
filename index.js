@@ -137,6 +137,13 @@ async function run() {
         });
 
 
+        //   api to show works on the work-sheet
+        app.get('/workSheet', async (req, res) => {
+            const result = await workSheetCollection.find().toArray();
+            res.send(result)
+        });
+
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             // insert email if user doesn't exists
@@ -184,14 +191,14 @@ async function run() {
         app.get('/users', async (req, res) => {
             const result = await usersCollection.find().toArray();
             res.send(result)
-        })
+        });
 
 
         //   contact data show to admin of visitors
         app.get('/messages', async (req, res) => {
             const result = await contactedCollection.find().toArray();
             res.send(result);
-        })
+        });
 
 
         // contact data receive from client side visitor
