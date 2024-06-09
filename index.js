@@ -3,7 +3,7 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 9000;
 
 // middleware
@@ -173,13 +173,14 @@ async function run() {
 
 
         // update a user as a HR
-        app.put('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
+        app.patch('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const updatedDoc = {
                 $set: {
                     role: 'HR',
-                    isVerified: 'Verified'
+                    isVerified: 'Verified',
+                    designation: 'HR'
                 }
             }
             const result = await usersCollection.updateOne(filter, updatedDoc);
