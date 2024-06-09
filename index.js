@@ -54,7 +54,7 @@ async function run() {
 
         // middlewares
         const verifyToken = (req, res, next) => {
-            console.log("token", req?.headers?.authorization)
+            // console.log("token", req?.headers?.authorization)
             if (!req.headers.authorization) {
                 return res.status(401).send({ message: 'Unauthorized access' });
             }
@@ -130,7 +130,7 @@ async function run() {
 
 
         // send data to database from work sheet page
-        app.post('/workSheet', async(req, res) => {
+        app.post('/workSheet', async (req, res) => {
             const workSheet = req.body
             const result = await workSheetCollection.insertOne(workSheet)
             res.send(result)
@@ -138,11 +138,17 @@ async function run() {
 
 
         //   api to show works on the work-sheet
-        app.get('/workSheet', async (req, res) => {
-            const result = await workSheetCollection.find().toArray();
-            res.send(result)
+        app.get('/workSheet/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+        
+            try {
+                const result = await workSheetCollection.find({ email: email }).toArray();
+                res.send(result);
+            } catch (error) {
+                console.error("Error fetching works:", error);
+                res.status(500).send({ message: "Error fetching works" });
+            }
         });
-
 
         app.post('/users', async (req, res) => {
             const user = req.body;
@@ -185,7 +191,35 @@ async function run() {
             }
             const result = await usersCollection.updateOne(filter, updatedDoc);
             res.send(result);
-        })
+        });
+
+
+        // update salary of a employee
+        app.put('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+
+            const newSalary = req.body.newSalary;
+            const currentSalary = req.body.currentSalary;
+
+            console.log("New Salary:", newSalary);
+            console.log("Current Salary:", currentSalary);
+
+            if (!newSalary || isNaN(newSalary) || newSalary <= currentSalary) {
+                return res.status(400).send({ message: 'Invalid salary value' });
+            }
+
+            const filter = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    salary: newSalary,
+                }
+            };
+            const result = await usersCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+        });
+
+
+
 
 
         //   api to show users on the UI
@@ -196,7 +230,7 @@ async function run() {
 
 
         //   contact data show to admin of visitors
-        app.get('/messages', async (req, res) => {
+        app.get('/messages', verifyToken, async (req, res) => {
             const result = await contactedCollection.find().toArray();
             res.send(result);
         });
