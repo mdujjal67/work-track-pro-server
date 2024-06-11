@@ -205,7 +205,7 @@ async function run() {
 
 
         // update salary of a employee
-        app.put('/users/:id',  async (req, res) => {
+        app.put('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
 
             const newSalary = req.body.newSalary;
@@ -228,22 +228,6 @@ async function run() {
             res.send(result);
 
         });
-
-
-
-
-        //   api to show specific users on the UI
-        // app.get('/users/:email', async (req, res) => {
-        //     const email = req.params.email;
-        
-        //     try {
-        //         const result = await usersCollection.find({ email: email }).toArray();
-        //         res.send(result);
-        //     } catch (error) {
-        //         console.error("Error fetching works:", error);
-        //         res.status(500).send({ message: "Error fetching works" });
-        //     }
-        // });
 
 
         //   api to show users on the UI
@@ -302,15 +286,19 @@ async function run() {
         });
 
 
-        // post payment info in the database
-        app.post('/payments', async (req, res) => {
+        // api to post payment info to the database
+        app.post('/payments', verifyToken, async (req, res) => {
             const payments = req.body
             const result = await paymentsCollection.insertOne(payments)
             res.send(result)
         });
 
 
-        
+        // to read & show the payment info from database
+        app.get('/payments', verifyToken, async (req, res) => {
+            const result = await paymentsCollection.find().toArray();
+            res.send(result);
+        });
 
 
 
