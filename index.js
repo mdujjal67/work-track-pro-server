@@ -3,6 +3,7 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 9000;
 
@@ -33,6 +34,7 @@ async function run() {
         const testimonialsCollection = client.db('WorkTrackPro').collection('testimonials');
         const usersCollection = client.db('WorkTrackPro').collection('users');
         const workSheetCollection = client.db('WorkTrackPro').collection('workSheet');
+        const paymentsCollection = client.db('WorkTrackPro').collection('payments');
 
 
 
@@ -52,7 +54,7 @@ async function run() {
         //------------------- service related api ----------------
 
 
-        // middlewares
+        // -------------middlewares------------
         const verifyToken = (req, res, next) => {
             // console.log("token", req?.headers?.authorization)
             if (!req.headers.authorization) {
@@ -137,7 +139,14 @@ async function run() {
         });
 
 
-        //   api to show works on the work-sheet
+        //   api to show all works on the work-sheet
+        app.get('/workSheet',verifyToken,  async (req, res) => {
+            const result = await workSheetCollection.find().toArray();
+            res.send(result)
+        });
+
+
+        //   api to show only logged in user's works on the work-sheet
         app.get('/workSheet/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
         
@@ -149,6 +158,7 @@ async function run() {
                 res.status(500).send({ message: "Error fetching works" });
             }
         });
+
 
         app.post('/users', async (req, res) => {
             const user = req.body;
@@ -195,7 +205,7 @@ async function run() {
 
 
         // update salary of a employee
-        app.put('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
+        app.put('/users/:id',  async (req, res) => {
             const id = req.params.id;
 
             const newSalary = req.body.newSalary;
@@ -216,10 +226,24 @@ async function run() {
             };
             const result = await usersCollection.updateOne(filter, updatedDoc);
             res.send(result);
+
         });
 
 
 
+
+        //   api to show specific users on the UI
+        // app.get('/users/:email', async (req, res) => {
+        //     const email = req.params.email;
+        
+        //     try {
+        //         const result = await usersCollection.find({ email: email }).toArray();
+        //         res.send(result);
+        //     } catch (error) {
+        //         console.error("Error fetching works:", error);
+        //         res.status(500).send({ message: "Error fetching works" });
+        //     }
+        // });
 
 
         //   api to show users on the UI
@@ -257,6 +281,38 @@ async function run() {
             const result = await servicesCollection.find().toArray();
             res.send(result);
         });
+
+
+
+        // ------------payment intent-----------
+        app.post('/create-payment-intent', async(req, res) => {
+            const { salary } = req.body;
+            const amount = parseInt(salary * 100);
+            console.log('amount inside the intent:', amount)
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+        });
+
+
+        // post payment info in the database
+        app.post('/payments', async (req, res) => {
+            const payments = req.body
+            const result = await paymentsCollection.insertOne(payments)
+            res.send(result)
+        });
+
+
+        
+
+
 
         // Connect the client to the server	(optional starting in v4.7)
         // await client.connect();
