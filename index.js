@@ -8,8 +8,16 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 9000;
 
 // middleware
-app.use(cors());
-app.use(express.json());
+const corsOptions = {
+    origin: ['http://localhost:5173',
+      'https://worktrackpro-67.web.app/',
+      'https://worktrackpro-67.firebaseapp.com/'
+    ],
+    credentials: true,
+    optionSuccessStatus: 200,
+  }
+  app.use(cors(corsOptions));
+  app.use(express.json());
 
 
 // --------------mongoDB start--------------
@@ -220,18 +228,7 @@ async function run() {
 
 
 
-        //   update verify status of a employee
-        app.put('/users/:id', async (req, res) => {
-            const id = req.params.id;
-            const filter = { _id: new ObjectId(id) };
-            const updatedDoc = {
-                $set: {
-                    isVerified: 'Verified'
-                }
-            }
-            const result = await usersCollection.updateOne(filter, updatedDoc);
-            res.send(result);
-        })
+        
 
 
         // update a user as a HR
@@ -251,7 +248,7 @@ async function run() {
 
 
         // update salary of a employee
-        app.put('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
+        app.put('/users/salary/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
 
             const newSalary = req.body.newSalary;
@@ -264,6 +261,7 @@ async function run() {
                 return res.status(400).send({ message: 'Invalid salary value' });
             }
 
+            
             const filter = { _id: new ObjectId(id) };
             const updatedDoc = {
                 $set: {
@@ -276,8 +274,22 @@ async function run() {
         });
 
 
+        //   update verify status of a employee
+        app.put('/users/:id',verifyToken, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    isVerified: 'Verified'
+                }
+            }
+            const result = await usersCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+        })
+
+
         //   api to show users on the UI
-        app.get('/users', async (req, res) => {
+        app.get('/users', verifyToken, async (req, res) => {
             const result = await usersCollection.find().toArray();
             res.send(result)
         });
@@ -299,7 +311,7 @@ async function run() {
         });
 
 
-        // read services
+        // read testimonials
         app.get('/testimonials', async (req, res) => {
             const result = await testimonialsCollection.find().toArray();
             res.send(result);
@@ -347,7 +359,7 @@ async function run() {
         });
 
 
-        app.get('/payments/:email', async (req, res) => {
+        app.get('/payments/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
         
             try {
@@ -363,8 +375,8 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         // await client.connect();
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        // await client.db("admin").command({ ping: 1 });
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
