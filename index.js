@@ -10,14 +10,14 @@ const port = process.env.PORT || 9000;
 // middleware
 const corsOptions = {
     origin: ['http://localhost:5173',
-      'https://worktrackpro-67.web.app/',
-      'https://worktrackpro-67.firebaseapp.com/'
+        'https://worktrackpro-67.web.app',
+        'https://worktrackpro-67.firebaseapp.com'
     ],
     credentials: true,
     optionSuccessStatus: 200,
-  }
-  app.use(cors(corsOptions));
-  app.use(express.json());
+}
+app.use(cors(corsOptions));
+app.use(express.json());
 
 
 // --------------mongoDB start--------------
@@ -148,7 +148,7 @@ async function run() {
 
 
         //   api to show all works on the work-sheet
-        app.get('/workSheet',verifyToken,  async (req, res) => {
+        app.get('/workSheet', verifyToken, async (req, res) => {
             const result = await workSheetCollection.find().toArray();
             res.send(result)
         });
@@ -157,7 +157,7 @@ async function run() {
         //   api to show only logged in user's works on the work-sheet
         app.get('/workSheet/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
-        
+
             try {
                 const result = await workSheetCollection.find({ email: email }).toArray();
                 res.send(result);
@@ -170,7 +170,7 @@ async function run() {
 
         app.get('/users/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
-        
+
             try {
                 const result = await usersCollection.find({ email: email }).toArray();
                 res.send(result);
@@ -194,6 +194,15 @@ async function run() {
             res.send(result);
         });
 
+
+        //   api to show users on the UI
+        app.get('/users', verifyToken, async (req, res) => {
+            const result = await usersCollection.find().toArray();
+            res.send(result)
+        });
+
+
+
         // demo post api to verify the hr automatically after signup
         // app.post('/users', async (req, res) => {
         //     const user = req.body;
@@ -201,20 +210,20 @@ async function run() {
         //     // It can be done in multiple ways (e.g., unique email constraint, upsert, simple checking)
         //     const query = { email: user.email };
         //     const existingUser = await usersCollection.findOne(query);
-            
+
         //     if (existingUser) {
         //         return res.send({ message: "User already exists." });
         //     }
-        
+
         //     // Automatically verify HR users
         //     const verifiedStatus = user.role === "HR" ? true : false;
-        
+
         //     // Add verified status to the user object
         //     const userWithVerifiedStatus = {
         //         ...user,
         //         verified: verifiedStatus
         //     };
-        
+
         //     try {
         //         // Insert the user into the database
         //         const result = await usersCollection.insertOne(userWithVerifiedStatus);
@@ -226,11 +235,7 @@ async function run() {
         // });
 
 
-
-
         
-
-
         // update a user as a HR
         app.patch('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
@@ -261,7 +266,7 @@ async function run() {
                 return res.status(400).send({ message: 'Invalid salary value' });
             }
 
-            
+
             const filter = { _id: new ObjectId(id) };
             const updatedDoc = {
                 $set: {
@@ -273,9 +278,23 @@ async function run() {
 
         });
 
+        // update users status to fired
+        app.put('/users/updateStatus/:id', verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    employeeStatus: 'Fired'
+                }
+            };
+            const result = await usersCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+        });
+
+
 
         //   update verify status of a employee
-        app.put('/users/:id',verifyToken, async (req, res) => {
+        app.put('/users/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const updatedDoc = {
@@ -285,13 +304,21 @@ async function run() {
             }
             const result = await usersCollection.updateOne(filter, updatedDoc);
             res.send(result);
-        })
+        });
 
 
-        //   api to show users on the UI
-        app.get('/users', verifyToken, async (req, res) => {
-            const result = await usersCollection.find().toArray();
-            res.send(result)
+
+
+        // ------------check the status of a employee for login (fired or not)--------------
+        app.get('/users/status/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await usersCollection.findOne({ email: email });
+            if (user) {
+                res.send({ status: user.employeeStatus });
+            } 
+            else {
+                res.status(404).send({ message: 'User not found' });
+            }
         });
 
 
@@ -327,7 +354,7 @@ async function run() {
 
 
         // ------------payment intent-----------
-        app.post('/create-payment-intent', async(req, res) => {
+        app.post('/create-payment-intent', async (req, res) => {
             const { salary } = req.body;
             const amount = parseInt(salary * 100);
             console.log('amount inside the intent:', amount)
@@ -361,7 +388,7 @@ async function run() {
 
         app.get('/payments/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
-        
+
             try {
                 const result = await paymentsCollection.find({ email }).toArray();
                 res.send(result);
