@@ -160,6 +160,19 @@ async function run() {
         });
 
 
+        app.get('/users/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+        
+            try {
+                const result = await usersCollection.find({ email: email }).toArray();
+                res.send(result);
+            } catch (error) {
+                console.error("Error fetching works:", error);
+                res.status(500).send({ message: "Error fetching works" });
+            }
+        });
+
+        // send data to the database of users
         app.post('/users', async (req, res) => {
             const user = req.body;
             // insert email if user doesn't exists
@@ -172,6 +185,39 @@ async function run() {
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
+
+        // demo post api to verify the hr automatically after signup
+        // app.post('/users', async (req, res) => {
+        //     const user = req.body;
+        //     // insert email if user doesn't exist
+        //     // It can be done in multiple ways (e.g., unique email constraint, upsert, simple checking)
+        //     const query = { email: user.email };
+        //     const existingUser = await usersCollection.findOne(query);
+            
+        //     if (existingUser) {
+        //         return res.send({ message: "User already exists." });
+        //     }
+        
+        //     // Automatically verify HR users
+        //     const verifiedStatus = user.role === "HR" ? true : false;
+        
+        //     // Add verified status to the user object
+        //     const userWithVerifiedStatus = {
+        //         ...user,
+        //         verified: verifiedStatus
+        //     };
+        
+        //     try {
+        //         // Insert the user into the database
+        //         const result = await usersCollection.insertOne(userWithVerifiedStatus);
+        //         res.send(result);
+        //     } catch (error) {
+        //         console.error("Error inserting user:", error);
+        //         res.status(500).send({ message: "Error inserting user" });
+        //     }
+        // });
+
+
 
 
         //   update verify status of a employee
@@ -300,6 +346,18 @@ async function run() {
             res.send(result);
         });
 
+
+        app.get('/payments/:email', async (req, res) => {
+            const email = req.params.email;
+        
+            try {
+                const result = await paymentsCollection.find({ email }).toArray();
+                res.send(result);
+            } catch (error) {
+                console.error("Error fetching works:", error);
+                res.status(500).send({ message: "Error fetching works" });
+            }
+        });
 
 
         // Connect the client to the server	(optional starting in v4.7)
